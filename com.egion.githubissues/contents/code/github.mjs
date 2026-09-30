@@ -183,3 +183,19 @@ export function snapshot(issues) {
     for (const i of issues) map[issueKey(i)] = i.updatedAt;
     return map;
 }
+
+// Compara a lista atual com um snapshot anterior.
+// added: chave que nao existia; updated: existia mas com updatedAt diferente.
+// prev === null significa "nunca houve snapshot" (primeira execucao): nada e novo,
+// senao o usuario veria as 41 issues piscando como novas na instalacao.
+export function diffIssues(prev, issues) {
+    if (!prev) return { added: [], updated: [] };
+    const added = [];
+    const updated = [];
+    for (const i of issues) {
+        const before = prev[issueKey(i)];
+        if (before === undefined) added.push(i);
+        else if (before !== i.updatedAt) updated.push(i);
+    }
+    return { added, updated };
+}

@@ -279,3 +279,27 @@ test('snapshot: mapa chave -> updatedAt', () => {
     assert.deepEqual(s, { 'a/b#1': 'X', 'a/c#1': 'Y' });
     assert.deepEqual(gh.snapshot([]), {});
 });
+
+const mk = (repo, number, updatedAt) => ({ repo, number, updatedAt });
+
+test('diffIssues: separa novas e atualizadas', () => {
+    const prev = { 'a/b#1': 'T1', 'a/b#2': 'T2' };
+    const now = [mk('a/b', 1, 'T1'), mk('a/b', 2, 'T2-novo'), mk('a/b', 3, 'T3')];
+    const d = gh.diffIssues(prev, now);
+    assert.deepEqual(d.added.map(i => i.number), [3]);
+    assert.deepEqual(d.updated.map(i => i.number), [2]);
+});
+
+test('diffIssues: sem mudancas devolve vazio', () => {
+    const d = gh.diffIssues({ 'a/b#1': 'T1' }, [mk('a/b', 1, 'T1')]);
+    assert.deepEqual(d, { added: [], updated: [] });
+});
+
+test('diffIssues: prev nulo (primeira execucao) nao marca nada como novo', () => {
+    const d = gh.diffIssues(null, [mk('a/b', 1, 'T1')]);
+    assert.deepEqual(d, { added: [], updated: [] });
+});
+
+test('diffIssues: prev vazio ({}) marca tudo como novo, diferente de nulo', () => {
+    assert.equal(gh.diffIssues({}, [mk('a/b', 1, 'T1')]).added.length, 1);
+});
