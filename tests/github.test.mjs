@@ -88,3 +88,27 @@ test('normalizeIssues: includePRs mantem as PRs', () => {
 test('normalizeIssues: lista vazia retorna vazio', () => {
     assert.deepEqual(gh.normalizeIssues([]), []);
 });
+
+test('groupByRepo: agrupa e ordena repos alfabeticamente', () => {
+    const issues = [
+        { id: 1, repo: 'b/zeta', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 2, repo: 'a/alfa', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 3, repo: 'b/zeta', updatedAt: '2026-01-01T00:00:00Z' },
+    ];
+    const g = gh.groupByRepo(issues);
+    assert.deepEqual(g.map(x => x.repo), ['a/alfa', 'b/zeta']);
+    assert.equal(g[1].issues.length, 2);
+});
+
+test('groupByRepo: dentro do repo, mais recente primeiro', () => {
+    const issues = [
+        { id: 1, repo: 'a/x', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 2, repo: 'a/x', updatedAt: '2026-03-01T00:00:00Z' },
+        { id: 3, repo: 'a/x', updatedAt: '2026-02-01T00:00:00Z' },
+    ];
+    assert.deepEqual(gh.groupByRepo(issues)[0].issues.map(i => i.id), [2, 3, 1]);
+});
+
+test('groupByRepo: lista vazia retorna vazio', () => {
+    assert.deepEqual(gh.groupByRepo([]), []);
+});

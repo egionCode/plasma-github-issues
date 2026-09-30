@@ -55,3 +55,21 @@ export function normalizeIssues(list, { includePRs = false } = {}) {
         .map(normalizeIssue)
         .filter(i => includePRs || !i.isPullRequest);
 }
+
+// Agrupa por repo para a UI renderizar secoes. Retorna array (nao objeto) porque
+// a ordem precisa ser estavel: repos em ordem alfabetica, issues da mais recente
+// atualizada para a mais antiga.
+export function groupByRepo(issues) {
+    const map = new Map();
+    for (const issue of issues) {
+        if (!map.has(issue.repo)) map.set(issue.repo, []);
+        map.get(issue.repo).push(issue);
+    }
+    return [...map.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([repo, items]) => ({
+            repo,
+            // ISO 8601 em UTC ordena corretamente como string
+            issues: items.sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)),
+        }));
+}
