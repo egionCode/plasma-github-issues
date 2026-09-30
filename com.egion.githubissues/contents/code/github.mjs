@@ -156,3 +156,16 @@ export function labelTextColor(hex) {
     const [r, g, b] = [m[1], m[2], m[3]].map(x => parseInt(x, 16));
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#000000' : '#ffffff';
 }
+
+// Busca local por texto. Todos os termos (separados por espaco) precisam aparecer em
+// algum lugar do titulo, repo, numero, autor ou nomes de label (AND, sem diferenciar
+// caixa). Local porque a lista ja esta em memoria: nao gasta requisicao da API.
+export function filterIssues(issues, query) {
+    const terms = (query || '').toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return issues;
+    return issues.filter(i => {
+        const hay = [i.title, i.repo, `#${i.number}`, i.author, ...i.labels.map(l => l.name)]
+            .join(' ').toLowerCase();
+        return terms.every(t => hay.includes(t));
+    });
+}

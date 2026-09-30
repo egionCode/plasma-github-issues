@@ -242,3 +242,27 @@ test('labelTextColor: aceita "#" e maiusculas; invalido cai em branco', () => {
     assert.equal(gh.labelTextColor(undefined), '#ffffff');
     assert.equal(gh.labelTextColor('xyz'), '#ffffff');
 });
+
+const searchable = [
+    { title: 'Corrigir login', repo: 'a/app', number: 12, author: 'ana', labels: [{ name: 'bug' }] },
+    { title: 'Nova tela', repo: 'a/site', number: 7, author: 'bia', labels: [{ name: 'enhancement' }] },
+];
+
+test('filterIssues: consulta vazia devolve tudo', () => {
+    assert.equal(gh.filterIssues(searchable, '').length, 2);
+    assert.equal(gh.filterIssues(searchable, '   ').length, 2);
+    assert.equal(gh.filterIssues(searchable, undefined).length, 2);
+});
+
+test('filterIssues: busca em titulo, repo, numero, autor e label sem diferenciar caixa', () => {
+    assert.equal(gh.filterIssues(searchable, 'LOGIN')[0].number, 12);
+    assert.equal(gh.filterIssues(searchable, 'a/site')[0].number, 7);
+    assert.equal(gh.filterIssues(searchable, '#12')[0].number, 12);
+    assert.equal(gh.filterIssues(searchable, 'bia')[0].number, 7);
+    assert.equal(gh.filterIssues(searchable, 'bug')[0].number, 12);
+});
+
+test('filterIssues: varios termos exigem todos (AND)', () => {
+    assert.equal(gh.filterIssues(searchable, 'a/app bug').length, 1);
+    assert.equal(gh.filterIssues(searchable, 'a/app enhancement').length, 0);
+});
