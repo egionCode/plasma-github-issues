@@ -121,7 +121,7 @@ test('ageLabel: escalas de tempo', () => {
     assert.equal(gh.ageLabel(ago(5 * MIN), now), '5min');
     assert.equal(gh.ageLabel(ago(3 * H), now), '3h');
     assert.equal(gh.ageLabel(ago(2 * D), now), '2d');
-    assert.equal(gh.ageLabel(ago(65 * D), now), '2m');
+    assert.equal(gh.ageLabel(ago(65 * D), now), '2mes');
     assert.equal(gh.ageLabel(ago(800 * D), now), '2a');
 });
 

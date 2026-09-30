@@ -85,7 +85,8 @@ export function ageLabel(iso, now = Date.now()) {
     if (h < 24) return `${h}h`;
     const d = Math.floor(h / 24);
     if (d < 30) return `${d}d`;
-    if (d < 365) return `${Math.floor(d / 30)}m`;
+    // "mes" e nao "m": "3m" seria lido como 3 minutos (minutos usam "min")
+    if (d < 365) return `${Math.floor(d / 30)}mes`;
     return `${Math.floor(d / 365)}a`;
 }
 
