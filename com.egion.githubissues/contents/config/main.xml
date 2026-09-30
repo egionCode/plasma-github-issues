@@ -15,6 +15,19 @@
     <entry name="includePRs" type="Bool">
       <default>false</default>
     </entry>
+    <!-- Avisar (notificacao do Plasma) quando chegar issue nova entre duas atualizacoes -->
+    <entry name="notify" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Repos recolhidos na lista (nomes "dono/repo") -->
+    <entry name="collapsedRepos" type="StringList">
+      <default></default>
+    </entry>
+    <!-- Snapshot JSON (chave -> updatedAt) do que o usuario ja viu; vazio = primeira execucao.
+         Fica na config para sobreviver a reinicios do Plasma. -->
+    <entry name="seenJson" type="String">
+      <default></default>
+    </entry>
     <!-- Intervalo de atualizacao em minutos -->
     <entry name="refreshMinutes" type="Int">
       <default>5</default>
