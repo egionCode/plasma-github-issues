@@ -46,6 +46,19 @@ PlasmaComponents.ItemDelegate {
                 maximumLineCount: 2
                 wrapMode: Text.Wrap
             }
+            // Comentarios so aparecem se houver, para nao poluir linhas sem discussao
+            Row {
+                visible: delegate.comments > 0
+                spacing: 2
+                opacity: 0.6
+                Kirigami.Icon {
+                    source: "mail-message"
+                    width: Kirigami.Units.iconSizes.small
+                    height: width
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                PlasmaComponents.Label { text: delegate.comments }
+            }
             PlasmaComponents.Label {
                 text: "#" + delegate.number
                 opacity: 0.6
