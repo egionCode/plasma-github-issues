@@ -10,6 +10,8 @@ MouseArea {
     id: compact
 
     property int count: 0
+    // Issues novas/atualizadas: o selo vira numero de novas e ganha cor de destaque
+    property int newCount: 0
     property bool hasError: false
     signal activated()
 
@@ -29,12 +31,15 @@ MouseArea {
         width: Math.max(height, badgeText.implicitWidth + Kirigami.Units.smallSpacing * 2)
         height: Math.round(parent.height * 0.5)
         radius: height / 2
-        color: Kirigami.Theme.highlightColor
+        color: compact.newCount > 0 ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
 
         PlasmaComponents.Label {
             id: badgeText
             anchors.centerIn: parent
-            text: compact.count > 99 ? "99+" : compact.count
+            text: {
+                const n = compact.newCount > 0 ? compact.newCount : compact.count;
+                return n > 99 ? "99+" : n;
+            }
             color: Kirigami.Theme.highlightedTextColor
             font.pixelSize: Math.max(8, parent.height * 0.65)
         }
