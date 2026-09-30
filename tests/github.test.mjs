@@ -266,3 +266,16 @@ test('filterIssues: varios termos exigem todos (AND)', () => {
     assert.equal(gh.filterIssues(searchable, 'a/app bug').length, 1);
     assert.equal(gh.filterIssues(searchable, 'a/app enhancement').length, 0);
 });
+
+test('issueKey: repo#numero', () => {
+    assert.equal(gh.issueKey({ repo: 'a/b', number: 7 }), 'a/b#7');
+});
+
+test('snapshot: mapa chave -> updatedAt', () => {
+    const s = gh.snapshot([
+        { repo: 'a/b', number: 1, updatedAt: 'X' },
+        { repo: 'a/c', number: 1, updatedAt: 'Y' },
+    ]);
+    assert.deepEqual(s, { 'a/b#1': 'X', 'a/c#1': 'Y' });
+    assert.deepEqual(gh.snapshot([]), {});
+});

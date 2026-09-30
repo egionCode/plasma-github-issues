@@ -169,3 +169,17 @@ export function filterIssues(issues, query) {
         return terms.every(t => hay.includes(t));
     });
 }
+
+// Identidade estavel de uma issue entre atualizacoes. "id" da API nao serve como
+// chave de UI aqui porque o snapshot persistido precisa ser legivel e compacto.
+export function issueKey(issue) {
+    return `${issue.repo}#${issue.number}`;
+}
+
+// Mapa chave -> updatedAt de uma lista. E o formato persistido em "visto" e usado
+// para comparar duas atualizacoes. Issues fechadas somem sozinhas do mapa.
+export function snapshot(issues) {
+    const map = {};
+    for (const i of issues) map[issueKey(i)] = i.updatedAt;
+    return map;
+}
