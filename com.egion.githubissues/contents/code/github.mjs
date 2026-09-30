@@ -88,3 +88,14 @@ export function ageLabel(iso, now = Date.now()) {
     if (d < 365) return `${Math.floor(d / 30)}m`;
     return `${Math.floor(d / 365)}a`;
 }
+
+// Extrai a URL da proxima pagina do header Link (RFC 8288), ou null na ultima.
+// Seguir o Link e mais robusto que incrementar "page" na mao.
+export function parseNextLink(linkHeader) {
+    if (!linkHeader) return null;
+    for (const part of linkHeader.split(',')) {
+        const m = part.match(/<([^>]+)>\s*;\s*rel="next"/);
+        if (m) return m[1];
+    }
+    return null;
+}

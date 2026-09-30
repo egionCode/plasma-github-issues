@@ -129,3 +129,20 @@ test('ageLabel: data futura (relogio dessincronizado) vira "agora"', () => {
     const now = Date.parse('2026-09-30T12:00:00Z');
     assert.equal(gh.ageLabel('2026-10-01T00:00:00Z', now), 'agora');
 });
+
+test('parseNextLink: encontra rel="next" entre varios', () => {
+    const h = '<https://api.github.com/issues?page=1>; rel="prev", ' +
+              '<https://api.github.com/issues?page=3>; rel="next", ' +
+              '<https://api.github.com/issues?page=9>; rel="last"';
+    assert.equal(gh.parseNextLink(h), 'https://api.github.com/issues?page=3');
+});
+
+test('parseNextLink: ultima pagina (sem next) retorna null', () => {
+    const h = '<https://api.github.com/issues?page=1>; rel="prev"';
+    assert.equal(gh.parseNextLink(h), null);
+});
+
+test('parseNextLink: header ausente retorna null', () => {
+    assert.equal(gh.parseNextLink(undefined), null);
+    assert.equal(gh.parseNextLink(''), null);
+});
