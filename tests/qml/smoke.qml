@@ -6,6 +6,7 @@
  */
 import QtQuick
 import "../../com.egion.githubissues/contents/code/github.mjs" as GH
+import "../../com.egion.githubissues/contents/code/http.mjs" as HTTP
 
 QtObject {
     Component.onCompleted: {
@@ -19,7 +20,9 @@ QtObject {
             issues: GH.normalizeIssues(raw).length,
             groups: GH.groupByRepo(GH.normalizeIssues(raw)).length,
             age: GH.ageLabel("2026-01-01T00:00:00Z", Date.parse("2026-01-01T03:00:00Z")),
-            next: GH.parseNextLink('<https://x/?page=2>; rel="next"')
+            next: GH.parseNextLink('<https://x/?page=2>; rel="next"'),
+            hdr: HTTP.parseHeaders("Link: <a>\r\nX-A: 1").link,
+            xhr: typeof HTTP.makeXhrHttp()
         };
         // http falso: exercita o fluxo de Promises do fetchAllIssues dentro do QML
         const http = (url, headers) => Promise.resolve({

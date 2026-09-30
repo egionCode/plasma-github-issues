@@ -27,4 +27,6 @@ test('github.mjs carrega e funciona no motor QML (sem async/await)', { skip: !ha
     assert.equal(res.age, '3h');
     assert.equal(res.next, 'https://x/?page=2');
     assert.equal(res.fetched, 1);
+    assert.equal(res.hdr, '<a>');
+    assert.equal(res.xhr, 'function');
 });
