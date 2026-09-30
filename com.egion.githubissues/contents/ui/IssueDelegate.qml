@@ -1,6 +1,7 @@
 /*
  * IssueDelegate.qml: uma linha da lista (titulo, numero, labels, idade).
- * Clique abre a issue no navegador. Roles vem do ListModel de main.qml.
+ * Clique abre a issue no navegador; clique direito abre o menu (abrir, copiar link,
+ * marcar como vista). Roles vem do ListModel de main.qml (linhas kind == "issue").
  * labelTextColor (github.mjs) garante contraste do texto sobre a cor de cada label.
  */
 import QtQuick
@@ -20,12 +21,57 @@ PlasmaComponents.ItemDelegate {
     required property string labelsJson
     required property bool isPullRequest
     required property int comments
+    required property bool isNew
+    required property string key
+
+    signal opened(string key)
+    signal copyRequested(string text)
+    signal seenRequested(string key)
 
     // Parse unico; array vazio quando a issue nao tem labels
     readonly property var labelList: JSON.parse(labelsJson)
 
     width: ListView.view ? ListView.view.width : implicitWidth
-    onClicked: Qt.openUrlExternally(url)
+    // Abrir conta como ver: limpa o destaque dessa issue
+    function open() {
+        Qt.openUrlExternally(url);
+        opened(key);
+    }
+    onClicked: open()
+
+    // Barra lateral de destaque para issues novas ou atualizadas desde a ultima vez
+    Rectangle {
+        visible: delegate.isNew
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom
+                  topMargin: 3; bottomMargin: 3 }
+        width: 3
+        radius: 1
+        color: Kirigami.Theme.highlightColor
+    }
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: menu.popup()
+    }
+    PlasmaComponents.Menu {
+        id: menu
+        PlasmaComponents.MenuItem {
+            text: i18n("Abrir no navegador")
+            icon.name: "internet-web-browser"
+            onClicked: delegate.open()
+        }
+        PlasmaComponents.MenuItem {
+            text: i18n("Copiar link")
+            icon.name: "edit-copy"
+            onClicked: delegate.copyRequested(delegate.url)
+        }
+        PlasmaComponents.MenuItem {
+            visible: delegate.isNew
+            text: i18n("Marcar como vista")
+            icon.name: "checkmark"
+            onClicked: delegate.seenRequested(delegate.key)
+        }
+    }
 
     contentItem: ColumnLayout {
         spacing: Kirigami.Units.smallSpacing
@@ -42,6 +88,7 @@ PlasmaComponents.ItemDelegate {
             PlasmaComponents.Label {
                 Layout.fillWidth: true
                 text: delegate.title
+                font.bold: delegate.isNew
                 elide: Text.ElideRight
                 maximumLineCount: 2
                 wrapMode: Text.Wrap
