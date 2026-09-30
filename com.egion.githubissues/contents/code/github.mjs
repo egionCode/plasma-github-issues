@@ -47,3 +47,11 @@ export function normalizeIssue(raw) {
         isPullRequest: Boolean(raw.pull_request),
     };
 }
+
+// Normaliza a lista inteira e, por padrao, descarta PRs: o widget e de issues.
+// includePRs fica como opcao porque o usuario pode querer ve-las (fase 2).
+export function normalizeIssues(list, { includePRs = false } = {}) {
+    return list
+        .map(normalizeIssue)
+        .filter(i => includePRs || !i.isPullRequest);
+}

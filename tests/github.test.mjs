@@ -72,3 +72,19 @@ test('normalizeIssue: tolera campos ausentes sem lancar', () => {
     assert.deepEqual(n.labels, []);
     assert.equal(n.comments, 0);
 });
+
+test('normalizeIssues: descarta PRs por padrao', () => {
+    const list = [rawIssue({ id: 1 }), rawIssue({ id: 2, pull_request: {} })];
+    const out = gh.normalizeIssues(list);
+    assert.deepEqual(out.map(i => i.id), [1]);
+});
+
+test('normalizeIssues: includePRs mantem as PRs', () => {
+    const list = [rawIssue({ id: 1 }), rawIssue({ id: 2, pull_request: {} })];
+    const out = gh.normalizeIssues(list, { includePRs: true });
+    assert.deepEqual(out.map(i => i.id), [1, 2]);
+});
+
+test('normalizeIssues: lista vazia retorna vazio', () => {
+    assert.deepEqual(gh.normalizeIssues([]), []);
+});
