@@ -27,3 +27,23 @@ export function buildUrl(filter, { state = 'open', perPage = 100, page = 1 } = {
     });
     return `${API_BASE}/issues?${params}`;
 }
+
+// Reduz o payload gigante da API (dezenas de campos) ao que a UI usa.
+// Mantem o objeto pequeno e desacopla a UI do formato da API.
+export function normalizeIssue(raw) {
+    return {
+        id: raw.id,
+        number: raw.number,
+        title: raw.title,
+        url: raw.html_url,
+        // full_name ("dono/repo") vem no campo repository em /issues
+        repo: raw.repository?.full_name ?? '',
+        labels: (raw.labels ?? []).map(l => ({ name: l.name, color: l.color })),
+        author: raw.user?.login ?? '',
+        comments: raw.comments ?? 0,
+        createdAt: raw.created_at,
+        updatedAt: raw.updated_at,
+        // /issues devolve PRs misturadas; so elas tem a chave pull_request
+        isPullRequest: Boolean(raw.pull_request),
+    };
+}
