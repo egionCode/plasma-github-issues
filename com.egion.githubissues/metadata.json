@@ -1,0 +1,24 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "com.egion.githubissues",
+        "Name": "GitHub Issues",
+        "Description": "Lista de issues do GitHub nos seus repositorios",
+        "Icon": "vcs-normal",
+        "Category": "Online Services",
+        "License": "MIT",
+        "Version": "0.1.0",
+        "Authors": [
+            {
+                "Name": "egionCode"
+            }
+        ],
+        "Website": "https://github.com/egionCode/plasma-github-issues",
+        "EnabledByDefault": true,
+        "FormFactors": [
+            "desktop",
+            "mediacenter"
+        ]
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

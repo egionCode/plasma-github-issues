@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Opcoes persistidas do widget. Lidas em QML via plasmoid.configuration.<nome> -->
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <!-- Tipo de filtro: assigned (atribuidas a mim), created (criadas por mim), mentioned, all -->
+    <entry name="filterType" type="String">
+      <default>assigned</default>
+    </entry>
+    <!-- Intervalo de atualizacao em minutos -->
+    <entry name="refreshMinutes" type="Int">
+      <default>5</default>
+    </entry>
+  </group>
+</kcfg>
