@@ -18,3 +18,31 @@ export function parseHeaders(raw) {
     }
     return out;
 }
+
+// Cria a funcao http() sobre XMLHttpRequest. Resolve para QUALQUER status HTTP
+// (401, 403, 500...) e deixa fetchAllIssues interpretar; so rejeita em falha de rede.
+export function makeXhrHttp(XHR = XMLHttpRequest) {
+    return (url, headers) => new Promise((resolve, reject) => {
+        const xhr = new XHR();
+        xhr.open('GET', url);
+        for (const name of Object.keys(headers || {})) {
+            xhr.setRequestHeader(name, headers[name]);
+        }
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== 4) return;
+            // status 0 = sem resposta (offline, DNS, TLS). Codigo "network" tipado para a UI
+            if (xhr.status === 0) {
+                const e = new Error('falha de rede');
+                e.code = 'network';
+                reject(e);
+                return;
+            }
+            resolve({
+                status: xhr.status,
+                headers: parseHeaders(xhr.getAllResponseHeaders()),
+                body: xhr.responseText,
+            });
+        };
+        xhr.send();
+    });
+}
