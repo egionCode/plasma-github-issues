@@ -5,9 +5,11 @@
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
   <group name="General">
-    <!-- Tipo de filtro: assigned (atribuidas a mim), created (criadas por mim), mentioned, all -->
+    <!-- Tipo de filtro: assigned, created, mentioned, repos, all.
+         Padrao "all": "assigned" costuma mostrar quase nada em quem trabalha sozinho
+         (na conta de teste: 1 de 41 issues), o que faz o widget parecer vazio. -->
     <entry name="filterType" type="String">
-      <default>assigned</default>
+      <default>all</default>
     </entry>
     <!-- Incluir pull requests na lista (o endpoint /issues mistura os dois) -->
     <entry name="includePRs" type="Bool">
