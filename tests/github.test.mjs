@@ -335,3 +335,31 @@ test('notificationText: nao altera texto perigoso (sem shell no caminho)', () =>
     const t = gh.notificationText([{ repo: 'a/b', number: 1, title: '$(rm -rf ~); `x` "q"' }]);
     assert.equal(t.body, 'a/b #1: $(rm -rf ~); `x` "q"');
 });
+
+test('sortByUpdated: mais recente primeiro, entre repos diferentes', () => {
+    const list = [
+        { repo: 'a/x', number: 1, updatedAt: '2026-01-01T00:00:00Z' },
+        { repo: 'b/y', number: 2, updatedAt: '2026-03-01T00:00:00Z' },
+        { repo: 'a/x', number: 3, updatedAt: '2026-02-01T00:00:00Z' },
+    ];
+    assert.deepEqual(gh.sortByUpdated(list).map(i => i.number), [2, 3, 1]);
+});
+
+test('sortByUpdated: empate desempata por repo e depois numero', () => {
+    const t = '2026-01-01T00:00:00Z';
+    const list = [
+        { repo: 'b/y', number: 1, updatedAt: t },
+        { repo: 'a/x', number: 9, updatedAt: t },
+        { repo: 'a/x', number: 2, updatedAt: t },
+    ];
+    assert.deepEqual(gh.sortByUpdated(list).map(i => `${i.repo}#${i.number}`), ['a/x#2', 'a/x#9', 'b/y#1']);
+});
+
+test('sortByUpdated: nao muta a entrada', () => {
+    const list = [
+        { repo: 'a/x', number: 1, updatedAt: '2026-01-01T00:00:00Z' },
+        { repo: 'a/x', number: 2, updatedAt: '2026-02-01T00:00:00Z' },
+    ];
+    gh.sortByUpdated(list);
+    assert.deepEqual(list.map(i => i.number), [1, 2]);
+});

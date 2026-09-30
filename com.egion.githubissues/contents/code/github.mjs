@@ -223,3 +223,13 @@ export function notificationText(issues, max = 3) {
     if (n > max) lines.push(`e mais ${n - max}...`);
     return { title, body: lines.join('\n') };
 }
+
+// Lista unica (sem agrupar): mais recente atualizada primeiro, em todos os repos.
+// Copia o array para nao mutar a entrada. Empate desempata por repo e numero para a
+// ordem ficar deterministica entre atualizacoes (evita a lista "pular" sem motivo).
+export function sortByUpdated(issues) {
+    return [...issues].sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt)
+        || a.repo.localeCompare(b.repo)
+        || a.number - b.number);
+}
