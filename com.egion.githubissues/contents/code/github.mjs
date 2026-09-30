@@ -100,23 +100,24 @@ export function parseNextLink(linkHeader) {
     return null;
 }
 
-// Busca todas as paginas e devolve issues normalizadas.
+// Busca todas as paginas e devolve (Promise) issues normalizadas.
 // http(url, headers) -> Promise<{ status, headers (chaves minusculas), body (string) }>
 // e injetado: no widget e um wrapper de XMLHttpRequest, nos testes e um fake.
 // maxPages limita o custo em contas com milhares de issues.
-export async function fetchAllIssues(http, token, filter, { includePRs = false, maxPages = 5 } = {}) {
-    if (!token) throw apiError('no_token', 'token ausente');
+// Decisao: Promises encadeadas em vez de async/await, porque o motor JS do QML (V4)
+//   nao suporta a sintaxe async: o modulo inteiro falharia ao carregar no widget.
+export function fetchAllIssues(http, token, filter, { includePRs = false, maxPages = 5 } = {}) {
+    if (!token) return Promise.reject(apiError('no_token', 'token ausente'));
 
     const headers = {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${token}`,
         'X-GitHub-Api-Version': '2022-11-28',
     };
-
-    let url = buildUrl(filter);
     const all = [];
-    for (let i = 0; url && i < maxPages; i++) {
-        const res = await http(url, headers);
+
+    // Busca uma pagina e, se houver "next" e sobrar orcamento, encadeia a seguinte
+    const fetchPage = (url, n) => http(url, headers).then(res => {
         if (res.status === 401) throw apiError('auth', 'token invalido ou expirado');
         // 403 com remaining=0 e rate limit; 403 sem isso e permissao (ex: SSO)
         if (res.status === 403 && res.headers['x-ratelimit-remaining'] === '0') {
@@ -124,9 +125,15 @@ export async function fetchAllIssues(http, token, filter, { includePRs = false, 
         }
         if (res.status !== 200) throw apiError('http', `HTTP ${res.status}`);
         all.push(...JSON.parse(res.body));
-        url = parseNextLink(res.headers.link);
-    }
-    return normalizeIssues(all, { includePRs });
+        const next = parseNextLink(res.headers.link);
+        return next && n + 1 < maxPages
+            ? fetchPage(next, n + 1)
+            : normalizeIssues(all, { includePRs });
+    });
+
+    // Promise.resolve().then captura erros sincronos (ex: buildUrl com filtro invalido)
+    // e os converte em rejeicao, mantendo um unico caminho de erro para o chamador
+    return Promise.resolve().then(() => fetchPage(buildUrl(filter), 0));
 }
 
 // Erro com "code" estavel para a UI escolher a mensagem sem parsear texto
