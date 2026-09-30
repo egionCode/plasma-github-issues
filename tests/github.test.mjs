@@ -303,3 +303,17 @@ test('diffIssues: prev nulo (primeira execucao) nao marca nada como novo', () =>
 test('diffIssues: prev vazio ({}) marca tudo como novo, diferente de nulo', () => {
     assert.equal(gh.diffIssues({}, [mk('a/b', 1, 'T1')]).added.length, 1);
 });
+
+test('parseSnapshot: JSON valido vira objeto', () => {
+    assert.deepEqual(gh.parseSnapshot('{"a/b#1":"T"}'), { 'a/b#1': 'T' });
+    assert.deepEqual(gh.parseSnapshot('{}'), {});
+});
+
+test('parseSnapshot: vazio, invalido e tipos errados viram null', () => {
+    assert.equal(gh.parseSnapshot(''), null);
+    assert.equal(gh.parseSnapshot(undefined), null);
+    assert.equal(gh.parseSnapshot('{quebrado'), null);
+    assert.equal(gh.parseSnapshot('[1,2]'), null);
+    assert.equal(gh.parseSnapshot('"texto"'), null);
+    assert.equal(gh.parseSnapshot('null'), null);
+});

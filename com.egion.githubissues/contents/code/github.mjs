@@ -199,3 +199,15 @@ export function diffIssues(prev, issues) {
     }
     return { added, updated };
 }
+
+// Le o snapshot salvo na config (string JSON). Devolve null se vazio ou corrompido:
+// config editada a mao ou truncada nao pode derrubar o widget, so reinicia o "visto".
+export function parseSnapshot(json) {
+    if (!json) return null;
+    try {
+        const v = JSON.parse(json);
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+    } catch (e) {
+        return null;
+    }
+}
