@@ -25,6 +25,14 @@ PlasmoidItem {
     property string errorCode: ""
     property int totalCount: 0
     property var lastUpdate: null
+    // Busca local: allIssues guarda a ultima resposta e o modelo e reconstruido a cada
+    // mudanca de query, sem nova requisicao
+    property var allIssues: []
+    property string query: ""
+    property int visibleCount: 0
+    // repo -> quantidade (para o cabecalho) e se ha mais de um dono (para mostrar "dono/")
+    property var repoCounts: ({})
+    property bool showOwner: false
     readonly property string filterType: Plasmoid.configuration.filterType
 
     // Lista achatada e ordenada por repo; a UI usa ListView.section para os cabecalhos.
@@ -52,8 +60,13 @@ PlasmoidItem {
         loading: root.loading
         errorMessage: root.errorCode !== "" ? root.errorText(root.errorCode) : ""
         totalCount: root.totalCount
+        visibleCount: root.visibleCount
+        repoCounts: root.repoCounts
+        showOwner: root.showOwner
+        query: root.query
         lastUpdate: root.lastUpdate
         onRefreshRequested: root.refresh()
+        onSearchChanged: text => root.query = text
     }
 
     // Mensagens em portugues para cada codigo de erro tipado de github.mjs/http.mjs
@@ -78,28 +91,43 @@ PlasmoidItem {
     function loadIssues(token) {
         GH.fetchAllIssues(xhrHttp, token, filterType, { includePRs: Plasmoid.configuration.includePRs })
             .then(list => {
-                issuesModel.clear();
-                // groupByRepo garante ordem estavel: repos A-Z, issues mais recentes primeiro
-                for (const group of GH.groupByRepo(list)) {
-                    for (const i of group.issues) {
-                        issuesModel.append({
-                            repo: i.repo, title: i.title, number: i.number, url: i.url,
-                            author: i.author, comments: i.comments, isPullRequest: i.isPullRequest,
-                            age: GH.ageLabel(i.updatedAt),
-                            // JSON porque array em ListModel vira sub-ListModel (sem .length)
-                            labelsJson: JSON.stringify(i.labels)
-                        });
-                    }
-                }
+                allIssues = list;
                 totalCount = list.length;
                 lastUpdate = new Date();
                 loading = false;
+                rebuildModel();
             })
             .catch(e => {
                 errorCode = e && e.code ? e.code : "unknown";
                 loading = false;
             });
     }
+
+    // Reconstroi o modelo a partir de allIssues aplicando a busca. groupByRepo garante
+    // ordem estavel: repos por atividade recente, issues mais recentes primeiro.
+    function rebuildModel() {
+        const shown = GH.filterIssues(allIssues, query);
+        const counts = {};
+        issuesModel.clear();
+        for (const group of GH.groupByRepo(shown)) {
+            counts[group.repo] = group.issues.length;
+            for (const i of group.issues) {
+                issuesModel.append({
+                    repo: i.repo, title: i.title, number: i.number, url: i.url,
+                    author: i.author, comments: i.comments, isPullRequest: i.isPullRequest,
+                    age: GH.ageLabel(i.updatedAt),
+                    // JSON porque array em ListModel vira sub-ListModel (sem .length)
+                    labelsJson: JSON.stringify(i.labels)
+                });
+            }
+        }
+        repoCounts = counts;
+        visibleCount = shown.length;
+        // Calculado sobre a lista inteira (nao a filtrada) para o cabecalho nao
+        // mudar de formato enquanto o usuario digita
+        showOwner = new Set(allIssues.map(i => i.repo.split("/")[0])).size > 1;
+    }
+    onQueryChanged: rebuildModel()
 
     // "executable" roda o comando e devolve stdout em onNewData. Desconecta logo depois
     // para que o mesmo comando possa ser disparado de novo no proximo refresh.

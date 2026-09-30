@@ -1,6 +1,7 @@
 /*
- * FullRepresentation.qml: popup/desktop com filtro, botao de atualizar e a lista.
- * Estados: carregando, erro (com mensagem), vazio e lista agrupada por repo.
+ * FullRepresentation.qml: popup/desktop com filtro, busca, atualizar e a lista.
+ * Estados: carregando, erro (com mensagem), vazio, sem resultado de busca e lista
+ *   agrupada por repo.
  * O filtro escolhido e gravado em Plasmoid.configuration.filterType (persiste).
  */
 import QtQuick
@@ -17,8 +18,13 @@ ColumnLayout {
     property bool loading: false
     property string errorMessage: ""
     property int totalCount: 0
+    property int visibleCount: 0
+    property var repoCounts: ({})
+    property bool showOwner: false
+    property string query: ""
     property var lastUpdate: null
     signal refreshRequested()
+    signal searchChanged(string text)
 
     Layout.minimumWidth: Kirigami.Units.gridUnit * 20
     Layout.minimumHeight: Kirigami.Units.gridUnit * 16
@@ -28,11 +34,11 @@ ColumnLayout {
 
     // value precisa bater com FILTERS de github.mjs
     readonly property var filterOptions: [
+        { text: i18n("Todas"),            value: "all" },
         { text: i18n("Atribuídas a mim"), value: "assigned" },
         { text: i18n("Criadas por mim"),  value: "created" },
         { text: i18n("Mencionadas"),      value: "mentioned" },
-        { text: i18n("Nos meus repos"),   value: "repos" },
-        { text: i18n("Todas"),            value: "all" }
+        { text: i18n("Nos meus repos"),   value: "repos" }
     ]
 
     RowLayout {
@@ -41,20 +47,40 @@ ColumnLayout {
 
         PlasmaComponents.ComboBox {
             id: filterBox
-            Layout.fillWidth: true
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 10
             model: full.filterOptions
             textRole: "text"
             valueRole: "value"
-            // Sincroniza com a config salva; activated so dispara por acao do usuario,
-            // entao nao cria laco com a mudanca vinda da config
+            // activated so dispara por acao do usuario, entao nao cria laco com a config
             currentIndex: Math.max(0, indexOfValue(Plasmoid.configuration.filterType))
             onActivated: Plasmoid.configuration.filterType = currentValue
         }
-        PlasmaComponents.ToolButton {
-            icon.name: "view-refresh"
-            enabled: !full.loading
-            onClicked: full.refreshRequested()
-            PlasmaComponents.ToolTip { text: i18n("Atualizar") }
+
+        PlasmaExtras.SearchField {
+            id: searchField
+            Layout.fillWidth: true
+            placeholderText: i18n("Buscar...")
+            text: full.query
+            onTextChanged: full.searchChanged(text)
+        }
+
+        // Spinner no lugar do botao enquanto carrega: feedback sem mudar o layout
+        Item {
+            implicitWidth: refreshButton.implicitWidth
+            implicitHeight: refreshButton.implicitHeight
+            PlasmaComponents.ToolButton {
+                id: refreshButton
+                anchors.fill: parent
+                visible: !full.loading
+                icon.name: "view-refresh"
+                onClicked: full.refreshRequested()
+                PlasmaComponents.ToolTip { text: i18n("Atualizar") }
+            }
+            PlasmaComponents.BusyIndicator {
+                anchors.fill: parent
+                running: full.loading
+                visible: full.loading
+            }
         }
     }
 
@@ -72,7 +98,7 @@ ColumnLayout {
     StackLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        // 0 = lista, 1 = mensagem (erro/vazio/carregando)
+        // 0 = lista, 1 = mensagem (erro/vazio/carregando/sem resultado)
         currentIndex: (listView.count > 0) ? 0 : 1
 
         PlasmaComponents.ScrollView {
@@ -85,18 +111,26 @@ ColumnLayout {
                 section.delegate: PlasmaExtras.ListSectionHeader {
                     required property string section
                     width: ListView.view.width
-                    label: section
+                    // Sem "dono/" quando todos os repos sao do mesmo dono (ruido repetido)
+                    label: full.showOwner ? section : section.substring(section.indexOf("/") + 1)
+
+                    PlasmaComponents.Label {
+                        text: full.repoCounts[section] || ""
+                        opacity: 0.6
+                    }
                 }
                 delegate: IssueDelegate {}
             }
         }
 
         PlasmaExtras.PlaceholderMessage {
-            // Prioridade: erro, carregando, vazio
+            // Prioridade: erro, carregando, sem resultado de busca, vazio
             iconName: full.errorMessage !== "" ? "dialog-error"
-                    : full.loading ? "view-refresh" : "checkmark"
+                    : full.loading ? "view-refresh"
+                    : full.query !== "" ? "edit-find" : "checkmark"
             text: full.errorMessage !== "" ? full.errorMessage
                 : full.loading ? i18n("Carregando...")
+                : full.query !== "" ? i18n("Nenhuma issue corresponde à busca")
                 : i18n("Nenhuma issue aberta neste filtro")
             width: parent.width - Kirigami.Units.gridUnit * 4
         }
@@ -110,7 +144,9 @@ ColumnLayout {
         opacity: 0.6
         font: Kirigami.Theme.smallFont
         text: full.lastUpdate
-            ? i18np("%1 issue", "%1 issues", full.totalCount) + " · " +
+            ? (full.query !== ""
+                ? i18n("%1 de %2", full.visibleCount, full.totalCount)
+                : i18np("%1 issue", "%1 issues", full.totalCount)) + " · " +
               i18n("atualizado às %1", Qt.formatTime(full.lastUpdate, "hh:mm"))
             : ""
     }
