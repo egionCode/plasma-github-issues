@@ -9,6 +9,10 @@
     <entry name="filterType" type="String">
       <default>assigned</default>
     </entry>
+    <!-- Incluir pull requests na lista (o endpoint /issues mistura os dois) -->
+    <entry name="includePRs" type="Bool">
+      <default>false</default>
+    </entry>
     <!-- Intervalo de atualizacao em minutos -->
     <entry name="refreshMinutes" type="Int">
       <default>5</default>
