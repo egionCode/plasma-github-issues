@@ -73,3 +73,18 @@ export function groupByRepo(issues) {
             issues: items.sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)),
         }));
 }
+
+// Idade relativa curta para caber na linha da lista ("5min", "3h", "2d").
+// "now" e parametro para o teste nao depender do relogio real.
+export function ageLabel(iso, now = Date.now()) {
+    const sec = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000));
+    const min = Math.floor(sec / 60);
+    if (min < 1) return 'agora';
+    if (min < 60) return `${min}min`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d}d`;
+    if (d < 365) return `${Math.floor(d / 30)}m`;
+    return `${Math.floor(d / 365)}a`;
+}

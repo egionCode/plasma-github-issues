@@ -112,3 +112,20 @@ test('groupByRepo: dentro do repo, mais recente primeiro', () => {
 test('groupByRepo: lista vazia retorna vazio', () => {
     assert.deepEqual(gh.groupByRepo([]), []);
 });
+
+test('ageLabel: escalas de tempo', () => {
+    const now = Date.parse('2026-09-30T12:00:00Z');
+    const ago = ms => new Date(now - ms).toISOString();
+    const MIN = 60e3, H = 60 * MIN, D = 24 * H;
+    assert.equal(gh.ageLabel(ago(10e3), now), 'agora');
+    assert.equal(gh.ageLabel(ago(5 * MIN), now), '5min');
+    assert.equal(gh.ageLabel(ago(3 * H), now), '3h');
+    assert.equal(gh.ageLabel(ago(2 * D), now), '2d');
+    assert.equal(gh.ageLabel(ago(65 * D), now), '2m');
+    assert.equal(gh.ageLabel(ago(800 * D), now), '2a');
+});
+
+test('ageLabel: data futura (relogio dessincronizado) vira "agora"', () => {
+    const now = Date.parse('2026-09-30T12:00:00Z');
+    assert.equal(gh.ageLabel('2026-10-01T00:00:00Z', now), 'agora');
+});
