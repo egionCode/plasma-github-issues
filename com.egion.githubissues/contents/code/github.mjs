@@ -142,3 +142,14 @@ function apiError(code, message) {
     e.code = code;
     return e;
 }
+
+// Escolhe texto preto ou branco conforme a luminosidade do fundo da label.
+// A API entrega a cor como hex de 6 digitos sem "#"; fundos claros (ex: "a2eeef")
+// ficariam ilegiveis com texto branco. Formula de luminancia relativa (ITU-R BT.601).
+export function labelTextColor(hex) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    // Cor invalida: texto branco e o padrao mais seguro sobre fundos escuros de tema
+    if (!m) return '#ffffff';
+    const [r, g, b] = [m[1], m[2], m[3]].map(x => parseInt(x, 16));
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#000000' : '#ffffff';
+}

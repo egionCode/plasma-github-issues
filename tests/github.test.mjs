@@ -221,3 +221,17 @@ test('fetchAllIssues: 500 vira http', async () => {
     const http = fakeHttp([{ status: 500, headers: {}, body: '' }]);
     await assert.rejects(gh.fetchAllIssues(http, 't', 'assigned'), { code: 'http', message: 'HTTP 500' });
 });
+
+test('labelTextColor: fundo claro usa texto preto, escuro usa branco', () => {
+    assert.equal(gh.labelTextColor('a2eeef'), '#000000');
+    assert.equal(gh.labelTextColor('ffffff'), '#000000');
+    assert.equal(gh.labelTextColor('d73a4a'), '#ffffff');
+    assert.equal(gh.labelTextColor('000000'), '#ffffff');
+});
+
+test('labelTextColor: aceita "#" e maiusculas; invalido cai em branco', () => {
+    assert.equal(gh.labelTextColor('#A2EEEF'), '#000000');
+    assert.equal(gh.labelTextColor(''), '#ffffff');
+    assert.equal(gh.labelTextColor(undefined), '#ffffff');
+    assert.equal(gh.labelTextColor('xyz'), '#ffffff');
+});
