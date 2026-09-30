@@ -99,3 +99,39 @@ export function parseNextLink(linkHeader) {
     }
     return null;
 }
+
+// Busca todas as paginas e devolve issues normalizadas.
+// http(url, headers) -> Promise<{ status, headers (chaves minusculas), body (string) }>
+// e injetado: no widget e um wrapper de XMLHttpRequest, nos testes e um fake.
+// maxPages limita o custo em contas com milhares de issues.
+export async function fetchAllIssues(http, token, filter, { includePRs = false, maxPages = 5 } = {}) {
+    if (!token) throw apiError('no_token', 'token ausente');
+
+    const headers = {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    let url = buildUrl(filter);
+    const all = [];
+    for (let i = 0; url && i < maxPages; i++) {
+        const res = await http(url, headers);
+        if (res.status === 401) throw apiError('auth', 'token invalido ou expirado');
+        // 403 com remaining=0 e rate limit; 403 sem isso e permissao (ex: SSO)
+        if (res.status === 403 && res.headers['x-ratelimit-remaining'] === '0') {
+            throw apiError('rate_limit', 'limite de requisicoes atingido');
+        }
+        if (res.status !== 200) throw apiError('http', `HTTP ${res.status}`);
+        all.push(...JSON.parse(res.body));
+        url = parseNextLink(res.headers.link);
+    }
+    return normalizeIssues(all, { includePRs });
+}
+
+// Erro com "code" estavel para a UI escolher a mensagem sem parsear texto
+function apiError(code, message) {
+    const e = new Error(message);
+    e.code = code;
+    return e;
+}

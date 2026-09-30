@@ -146,3 +146,78 @@ test('parseNextLink: header ausente retorna null', () => {
     assert.equal(gh.parseNextLink(undefined), null);
     assert.equal(gh.parseNextLink(''), null);
 });
+
+// Fake de HTTP: devolve as respostas da fila em ordem e registra as chamadas
+const fakeHttp = responses => {
+    const calls = [];
+    const fn = async (url, headers) => {
+        calls.push({ url, headers });
+        return responses.shift();
+    };
+    fn.calls = calls;
+    return fn;
+};
+const ok = (items, link) => ({
+    status: 200,
+    headers: link ? { link } : {},
+    body: JSON.stringify(items),
+});
+
+test('fetchAllIssues: envia token e headers da API', async () => {
+    const http = fakeHttp([ok([rawIssue()])]);
+    await gh.fetchAllIssues(http, 'tok123', 'assigned');
+    assert.equal(http.calls[0].headers.Authorization, 'Bearer tok123');
+    assert.equal(http.calls[0].headers.Accept, 'application/vnd.github+json');
+});
+
+test('fetchAllIssues: segue paginacao ate acabar o Link next', async () => {
+    const http = fakeHttp([
+        ok([rawIssue({ id: 1 })], '<https://api.github.com/issues?page=2>; rel="next"'),
+        ok([rawIssue({ id: 2 })]),
+    ]);
+    const out = await gh.fetchAllIssues(http, 't', 'assigned');
+    assert.deepEqual(out.map(i => i.id), [1, 2]);
+    assert.equal(http.calls[1].url, 'https://api.github.com/issues?page=2');
+});
+
+test('fetchAllIssues: respeita maxPages', async () => {
+    const next = '<https://api.github.com/issues?page=2>; rel="next"';
+    const http = fakeHttp([ok([rawIssue({ id: 1 })], next), ok([rawIssue({ id: 2 })], next)]);
+    const out = await gh.fetchAllIssues(http, 't', 'assigned', { maxPages: 1 });
+    assert.equal(out.length, 1);
+    assert.equal(http.calls.length, 1);
+});
+
+test('fetchAllIssues: filtra PRs por padrao e inclui sob demanda', async () => {
+    const data = [rawIssue({ id: 1 }), rawIssue({ id: 2, pull_request: {} })];
+    const a = await gh.fetchAllIssues(fakeHttp([ok(data)]), 't', 'all');
+    const b = await gh.fetchAllIssues(fakeHttp([ok(data)]), 't', 'all', { includePRs: true });
+    assert.equal(a.length, 1);
+    assert.equal(b.length, 2);
+});
+
+test('fetchAllIssues: sem token lanca no_token sem chamar a rede', async () => {
+    const http = fakeHttp([]);
+    await assert.rejects(gh.fetchAllIssues(http, '', 'assigned'), { code: 'no_token' });
+    assert.equal(http.calls.length, 0);
+});
+
+test('fetchAllIssues: 401 vira erro auth', async () => {
+    const http = fakeHttp([{ status: 401, headers: {}, body: '{}' }]);
+    await assert.rejects(gh.fetchAllIssues(http, 't', 'assigned'), { code: 'auth' });
+});
+
+test('fetchAllIssues: 403 com remaining=0 vira rate_limit', async () => {
+    const http = fakeHttp([{ status: 403, headers: { 'x-ratelimit-remaining': '0' }, body: '{}' }]);
+    await assert.rejects(gh.fetchAllIssues(http, 't', 'assigned'), { code: 'rate_limit' });
+});
+
+test('fetchAllIssues: 403 sem rate limit vira http generico', async () => {
+    const http = fakeHttp([{ status: 403, headers: { 'x-ratelimit-remaining': '10' }, body: '{}' }]);
+    await assert.rejects(gh.fetchAllIssues(http, 't', 'assigned'), { code: 'http' });
+});
+
+test('fetchAllIssues: 500 vira http', async () => {
+    const http = fakeHttp([{ status: 500, headers: {}, body: '' }]);
+    await assert.rejects(gh.fetchAllIssues(http, 't', 'assigned'), { code: 'http', message: 'HTTP 500' });
+});
