@@ -89,15 +89,22 @@ test('normalizeIssues: lista vazia retorna vazio', () => {
     assert.deepEqual(gh.normalizeIssues([]), []);
 });
 
-test('groupByRepo: agrupa e ordena repos alfabeticamente', () => {
+test('groupByRepo: repos ordenados pela atividade mais recente', () => {
     const issues = [
-        { id: 1, repo: 'b/zeta', updatedAt: '2026-01-01T00:00:00Z' },
-        { id: 2, repo: 'a/alfa', updatedAt: '2026-01-01T00:00:00Z' },
-        { id: 3, repo: 'b/zeta', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 1, repo: 'b/antigo', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 2, repo: 'a/quente', updatedAt: '2026-03-01T00:00:00Z' },
+        { id: 3, repo: 'b/antigo', updatedAt: '2026-01-02T00:00:00Z' },
+        { id: 4, repo: 'c/medio', updatedAt: '2026-02-01T00:00:00Z' },
     ];
     const g = gh.groupByRepo(issues);
-    assert.deepEqual(g.map(x => x.repo), ['a/alfa', 'b/zeta']);
-    assert.equal(g[1].issues.length, 2);
+    assert.deepEqual(g.map(x => x.repo), ['a/quente', 'c/medio', 'b/antigo']);
+    assert.equal(g[2].issues.length, 2);
+});
+
+test('groupByRepo: empate de atividade desempata por nome', () => {
+    const t = '2026-01-01T00:00:00Z';
+    const g = gh.groupByRepo([{ id: 1, repo: 'b/x', updatedAt: t }, { id: 2, repo: 'a/x', updatedAt: t }]);
+    assert.deepEqual(g.map(x => x.repo), ['a/x', 'b/x']);
 });
 
 test('groupByRepo: dentro do repo, mais recente primeiro', () => {

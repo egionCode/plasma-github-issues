@@ -57,8 +57,9 @@ export function normalizeIssues(list, { includePRs = false } = {}) {
 }
 
 // Agrupa por repo para a UI renderizar secoes. Retorna array (nao objeto) porque
-// a ordem precisa ser estavel: repos em ordem alfabetica, issues da mais recente
-// atualizada para a mais antiga.
+// a ordem precisa ser estavel. Repos: o de atividade mais recente primeiro (no uso
+// diario importa ver onde houve movimento), empate em ordem alfabetica.
+// Issues dentro do repo: da mais recente atualizada para a mais antiga.
 export function groupByRepo(issues) {
     const map = new Map();
     for (const issue of issues) {
@@ -66,12 +67,13 @@ export function groupByRepo(issues) {
         map.get(issue.repo).push(issue);
     }
     return [...map.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
         .map(([repo, items]) => ({
             repo,
             // ISO 8601 em UTC ordena corretamente como string
             issues: items.sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)),
-        }));
+        }))
+        .sort((a, b) =>
+            b.issues[0].updatedAt.localeCompare(a.issues[0].updatedAt) || a.repo.localeCompare(b.repo));
 }
 
 // Idade relativa curta para caber na linha da lista ("5min", "3h", "2d").
