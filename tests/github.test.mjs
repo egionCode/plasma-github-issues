@@ -317,3 +317,21 @@ test('parseSnapshot: vazio, invalido e tipos errados viram null', () => {
     assert.equal(gh.parseSnapshot('"texto"'), null);
     assert.equal(gh.parseSnapshot('null'), null);
 });
+
+test('notificationText: singular com uma issue', () => {
+    const t = gh.notificationText([{ repo: 'a/b', number: 4, title: 'Falha' }]);
+    assert.equal(t.title, '1 nova issue');
+    assert.equal(t.body, 'a/b #4: Falha');
+});
+
+test('notificationText: plural, limita linhas e resume o resto', () => {
+    const list = [1, 2, 3, 4, 5].map(n => ({ repo: 'a/b', number: n, title: `t${n}` }));
+    const t = gh.notificationText(list);
+    assert.equal(t.title, '5 novas issues');
+    assert.deepEqual(t.body.split('\n'), ['a/b #1: t1', 'a/b #2: t2', 'a/b #3: t3', 'e mais 2...']);
+});
+
+test('notificationText: nao altera texto perigoso (sem shell no caminho)', () => {
+    const t = gh.notificationText([{ repo: 'a/b', number: 1, title: '$(rm -rf ~); `x` "q"' }]);
+    assert.equal(t.body, 'a/b #1: $(rm -rf ~); `x` "q"');
+});

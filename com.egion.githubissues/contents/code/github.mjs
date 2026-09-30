@@ -211,3 +211,15 @@ export function parseSnapshot(json) {
         return null;
     }
 }
+
+// Texto da notificacao para issues novas: titulo no singular/plural e ate 3 linhas
+// de exemplo. Limitado porque a bolha de notificacao do Plasma corta texto longo.
+// Devolve texto puro: a UI o passa ao servico de notificacao SEM shell, pois titulos
+// podem vir de terceiros (issues abertas em repos publicos).
+export function notificationText(issues, max = 3) {
+    const n = issues.length;
+    const title = n === 1 ? '1 nova issue' : `${n} novas issues`;
+    const lines = issues.slice(0, max).map(i => `${i.repo} #${i.number}: ${i.title}`);
+    if (n > max) lines.push(`e mais ${n - max}...`);
+    return { title, body: lines.join('\n') };
+}
