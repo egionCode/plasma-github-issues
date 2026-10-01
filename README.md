@@ -1,93 +1,114 @@
-# GitHub Issues para KDE Plasma 6
+# GitHub Issues for KDE Plasma 6
 
-Widget (plasmoid) que lista as issues abertas dos seus repositórios do GitHub,
-agrupadas por repo, direto no desktop ou no painel do Plasma.
+A Plasma widget that shows the open issues from your GitHub repositories on the desktop
+or in a panel, so you can check them without opening a browser tab.
 
-## Recursos
+## Features
 
-- Filtros: todas, atribuídas a mim, criadas por mim, mencionadas, nos meus repos
-- Busca local por título, repo, label, autor ou número (vários termos = todos precisam casar)
-- Repos ordenados pela atividade mais recente; cabeçalho recolhível com contagem e issues recuadas sob ele
-- Modo "lista única" (sem agrupar): ordena tudo por atividade e mostra o repo em cada linha. Alterna pelo botão na barra do widget ou em Configurar
-- Destaque de issues novas ou atualizadas desde a última vez que você viu
-- Notificação quando chega issue nova entre duas atualizações
-- Clique abre no navegador; clique direito: abrir, copiar link, marcar como vista
-- Ícone no painel com contador (cor de destaque quando há novas)
-- Labels com a cor do GitHub e contraste automático do texto
+- Filters: all, assigned to me, created by me, mentioned, in my repos
+- Local search by title, repo, label, author or number (several terms must all match)
+- Two layouts: grouped by repository (collapsible, with counts and indented issues) or a
+  single list sorted by recent activity with the repo shown on each row
+- Highlights issues that are new or updated since you last looked
+- Native desktop notification when a new issue arrives
+- Click to open in the browser; right-click to open, copy the link or mark as seen
+- Panel icon with a counter that changes color when something is new
+- Label colors from GitHub, with automatic text contrast
 
-## Requisitos
+## Requirements
 
 - KDE Plasma 6
-- [GitHub CLI](https://cli.github.com) (`gh`) autenticado: `gh auth login`
+- [GitHub CLI](https://cli.github.com) (`gh`), logged in with `gh auth login`
 
-O token é lido em tempo de execução com `gh auth token` (ou da variável `GH_TOKEN`,
-que tem prioridade). Ele não é gravado em disco nem registrado em log.
+The widget reads its token at runtime with `gh auth token`, or from the `GH_TOKEN`
+environment variable, which takes priority. The token is never written to disk or logged.
 
-## Instalação
+## Installation
 
-### Pelo arquivo da release (recomendado)
-
-Baixe o `.plasmoid` em [Releases](https://github.com/egionCode/plasma-github-issues/releases)
-e instale:
+Run the installer. It downloads the latest release and installs it for your user, so
+it needs no root:
 
 ```bash
-kpackagetool6 -t Plasma/Applet -i github-issues-X.Y.Z.plasmoid   # primeira vez
-kpackagetool6 -t Plasma/Applet -u github-issues-X.Y.Z.plasmoid   # atualizar
+curl -fsSL https://raw.githubusercontent.com/egionCode/plasma-github-issues/master/install.sh | bash
 ```
 
-### A partir do código
+If you would rather read it first, it is a short script:
+[install.sh](install.sh).
+
+Then right-click the desktop or a panel, choose "Add Widgets" and look for
+"GitHub Issues". If it does not show up, restart the shell with
+`kquitapp6 plasmashell && kstart plasmashell`.
+
+Installer options:
+
+```bash
+./install.sh                    # install or update to the latest release
+./install.sh --version v0.1.0   # install a specific release
+./install.sh --local            # install from this checkout instead of downloading
+./install.sh --uninstall        # remove the widget
+```
+
+Running `install.sh` again updates an existing install.
+
+### Manual install
+
+Download the `.plasmoid` file from
+[Releases](https://github.com/egionCode/plasma-github-issues/releases) and run:
+
+```bash
+kpackagetool6 -t Plasma/Applet -i github-issues-X.Y.Z.plasmoid   # first time
+kpackagetool6 -t Plasma/Applet -u github-issues-X.Y.Z.plasmoid   # update
+```
+
+## Development
 
 ```bash
 git clone https://github.com/egionCode/plasma-github-issues
 cd plasma-github-issues
-kpackagetool6 -t Plasma/Applet -i com.egion.githubissues
+npm test                                                           # run the tests
+plasmoidviewer -a ./com.egion.githubissues -f planar -s 560x900    # try it in a window
+GH_TOKEN=invalid plasmoidviewer -a ./com.egion.githubissues        # see the error state
 ```
 
-Depois: clique direito no desktop ou painel, "Adicionar widgets", "GitHub Issues".
-Para remover: `kpackagetool6 -t Plasma/Applet -r com.egion.githubissues`.
+`plasmoidviewer` ships in the `plasma-sdk` package. Set `QT_FORCE_STDERR_LOGGING=1` to
+see QML `console.log` output.
 
-## Desenvolvimento
-
-```bash
-npm test                                                   # testes automatizados
-plasmoidviewer -a ./com.egion.githubissues -f planar -s 560x1000   # testar numa janela
-GH_TOKEN=invalido plasmoidviewer -a ./com.egion.githubissues      # ver o estado de erro
-```
-
-`plasmoidviewer` vem no pacote `plasma-sdk`. Para ver logs do QML use
-`QT_FORCE_STDERR_LOGGING=1`.
-
-### Estrutura
+### Layout
 
 ```
+install.sh                  # installer
 com.egion.githubissues/
   metadata.json
   contents/
-    code/github.mjs   # lógica pura: URL, normalização, agrupamento, busca, diff, paginação
-    code/http.mjs     # adaptador de XMLHttpRequest que devolve Promise
-    config/           # main.xml (opções) e config.qml
-    ui/               # main.qml, FullRepresentation, CompactRepresentation, delegates
-tests/                # testes em Node + smoke test no motor QML real (qml6)
+    code/github.mjs         # pure logic: URLs, normalizing, grouping, search, diffing, paging
+    code/http.mjs           # XMLHttpRequest adapter that returns a Promise
+    config/                 # main.xml (settings) and config.qml
+    ui/                     # main.qml, full and compact views, delegates
+tests/                      # Node tests plus a smoke test in the real QML engine (qml6)
 ```
 
-### Decisões não óbvias
+### Design notes
 
-- **Sem `async/await`:** o motor JS do QML (V4) não suporta a sintaxe e o módulo inteiro
-  falha ao carregar. Usa-se Promises encadeadas. O teste `tests/qml-smoke.test.mjs` roda os
-  módulos no `qml6` para pegar esse tipo de incompatibilidade, que o Node não detecta.
-- **Sem `Object.fromEntries`:** também não existe no motor QML.
-- **Notificação sem shell:** títulos de issue podem vir de terceiros (issues abertas em repos
-  públicos), então o aviso usa `org.kde.notification` e nunca passa texto por um shell.
-- **Padrão "Todas":** `assigned` costuma mostrar quase nada para quem trabalha sozinho.
-- **Duas comparações distintas:** o destaque compara com o que você já viu (persistido na
-  config); a notificação compara com a atualização anterior (memória), para avisar uma vez só.
+- The code never uses `async/await`. The QML JavaScript engine can't parse it, and one
+  `async` keyword is enough to make the whole module fail to load. Promises are chained
+  instead. Node accepts the syntax without complaint, so `tests/qml-smoke.test.mjs` loads
+  the modules in `qml6` to catch it. `Object.fromEntries` is missing from that engine too.
+- Notifications never go through a shell. Issue titles can come from strangers (anyone can
+  open an issue on a public repo), so the widget uses `org.kde.notification` and never
+  builds a command out of them.
+- The default filter is "All". "Assigned" shows almost nothing if you mostly work alone.
+- The "new" highlight and the notification use different baselines. The highlight compares
+  with what you have already seen, stored in the widget config. The notification compares
+  with the previous refresh, kept in memory, so an issue alerts you at most once.
 
-## Limitações conhecidas
+## Known limitations
 
-- Busca pelo endpoint `GET /issues`: só issues de repos aos quais o token tem acesso.
-- Até 5 páginas de 100 issues por atualização.
-- Em conta com orgs, o filtro "Todas" inclui itens assinados (`subscribed`) e pode trazer ruído.
+- It uses `GET /issues`, so it only sees repos the token can access.
+- Each refresh reads up to 5 pages of 100 issues.
+- With organizations, the "All" filter includes subscribed items and can get noisy.
+- The widget interface is currently in Portuguese (pt-BR). Strings go through KDE's
+  `i18n()`, so translations are possible.
 
-## Licença
+## License
 
 [MIT](LICENSE)
