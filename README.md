@@ -25,12 +25,26 @@ que tem prioridade). Ele não é gravado em disco nem registrado em log.
 
 ## Instalação
 
+### Pelo arquivo da release (recomendado)
+
+Baixe o `.plasmoid` em [Releases](https://github.com/egionCode/plasma-github-issues/releases)
+e instale:
+
 ```bash
-kpackagetool6 -t Plasma/Applet -i com.egion.githubissues   # primeira vez
-kpackagetool6 -t Plasma/Applet -u com.egion.githubissues   # atualizar
+kpackagetool6 -t Plasma/Applet -i github-issues-X.Y.Z.plasmoid   # primeira vez
+kpackagetool6 -t Plasma/Applet -u github-issues-X.Y.Z.plasmoid   # atualizar
+```
+
+### A partir do código
+
+```bash
+git clone https://github.com/egionCode/plasma-github-issues
+cd plasma-github-issues
+kpackagetool6 -t Plasma/Applet -i com.egion.githubissues
 ```
 
 Depois: clique direito no desktop ou painel, "Adicionar widgets", "GitHub Issues".
+Para remover: `kpackagetool6 -t Plasma/Applet -r com.egion.githubissues`.
 
 ## Desenvolvimento
 
@@ -73,3 +87,7 @@ tests/                # testes em Node + smoke test no motor QML real (qml6)
 - Busca pelo endpoint `GET /issues`: só issues de repos aos quais o token tem acesso.
 - Até 5 páginas de 100 issues por atualização.
 - Em conta com orgs, o filtro "Todas" inclui itens assinados (`subscribed`) e pode trazer ruído.
+
+## Licença
+
+[MIT](LICENSE)
