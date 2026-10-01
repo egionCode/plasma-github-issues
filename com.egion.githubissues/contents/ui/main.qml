@@ -33,6 +33,7 @@ PlasmoidItem {
     property int totalCount: 0
     property var lastUpdate: null
     readonly property string filterType: Plasmoid.configuration.filterType
+    readonly property bool grouped: Plasmoid.configuration.groupByRepo
 
     // Busca local: allIssues guarda a ultima resposta e o modelo e reconstruido a cada
     // mudanca de query/recolhimento, sem nova requisicao
@@ -76,11 +77,13 @@ PlasmoidItem {
         visibleCount: root.visibleCount
         newCount: root.newCount
         showOwner: root.showOwner
+        grouped: root.grouped
         query: root.query
         lastUpdate: root.lastUpdate
         onRefreshRequested: root.refresh()
         onSearchChanged: text => root.query = text
         onRepoToggled: repo => root.toggleRepo(repo)
+        onGroupingToggled: Plasmoid.configuration.groupByRepo = !Plasmoid.configuration.groupByRepo
         onIssueOpened: key => root.markSeen(key)
         onMarkAllSeenRequested: root.markAllSeen()
     }
@@ -177,24 +180,29 @@ PlasmoidItem {
         Plasmoid.configuration.collapsedRepos = list;
     }
 
-    // Reconstroi o modelo a partir de allIssues aplicando a busca e o recolhimento.
-    // groupByRepo garante ordem estavel: repos por atividade recente, issues mais recentes
-    // primeiro. Durante uma busca o recolhimento e ignorado: esconder resultados que o
-    // usuario acabou de procurar seria confuso.
+    // Reconstroi o modelo a partir de allIssues aplicando a busca e o modo de exibicao.
+    // Agrupado: repos por atividade recente (groupByRepo), cabecalho + issues, com
+    // recolhimento. Plano: so issues, ordenadas globalmente por atividade. Durante uma
+    // busca o recolhimento e ignorado: esconder resultados que o usuario acabou de
+    // procurar seria confuso.
     function rebuildModel() {
         const shown = GH.filterIssues(allIssues, query);
         const collapsed = Plasmoid.configuration.collapsedRepos;
-        issuesModel.clear();
-        for (const group of GH.groupByRepo(shown)) {
-            const isCollapsed = query === "" && collapsed.indexOf(group.repo) >= 0;
-            issuesModel.append(row("header", group.repo, group.issues.length, isCollapsed, null));
-            if (isCollapsed) continue;
-            for (const i of group.issues) issuesModel.append(row("issue", group.repo, 0, false, i));
-        }
-        visibleCount = shown.length;
-        // Calculado sobre a lista inteira (nao a filtrada) para o cabecalho nao
+        // Calculado sobre a lista inteira (nao a filtrada) para o rotulo do repo nao
         // mudar de formato enquanto o usuario digita
         showOwner = new Set(allIssues.map(i => i.repo.split("/")[0])).size > 1;
+        issuesModel.clear();
+        if (grouped) {
+            for (const group of GH.groupByRepo(shown)) {
+                const isCollapsed = query === "" && collapsed.indexOf(group.repo) >= 0;
+                issuesModel.append(row("header", group.repo, group.issues.length, isCollapsed, null));
+                if (isCollapsed) continue;
+                for (const i of group.issues) issuesModel.append(row("issue", group.repo, 0, false, i));
+            }
+        } else {
+            for (const i of GH.sortByUpdated(shown)) issuesModel.append(row("issue", i.repo, 0, false, i));
+        }
+        visibleCount = shown.length;
     }
 
     // Linha uniforme: header e issue compartilham os mesmos campos (ListModel exige
@@ -208,7 +216,11 @@ PlasmoidItem {
             isPullRequest: i ? i.isPullRequest : false,
             age: i ? GH.ageLabel(i.updatedAt) : "",
             // JSON porque array em ListModel vira sub-ListModel (sem .length)
-            labelsJson: JSON.stringify(i ? i.labels : [])
+            labelsJson: JSON.stringify(i ? i.labels : []),
+            // Apresentacao: recuo so sob cabecalho; repo na linha so sem cabecalho
+            indented: grouped,
+            showRepo: !grouped,
+            repoLabel: showOwner ? repo : repo.substring(repo.indexOf("/") + 1)
         };
     }
     onQueryChanged: rebuildModel()
@@ -253,6 +265,7 @@ PlasmoidItem {
         function onFilterTypeChanged() { root.refresh(); }
         function onIncludePRsChanged() { root.refresh(); }
         function onCollapsedReposChanged() { root.rebuildModel(); }
+        function onGroupByRepoChanged() { root.rebuildModel(); }
     }
 
     Component.onCompleted: refresh()
