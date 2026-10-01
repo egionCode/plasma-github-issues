@@ -23,6 +23,9 @@ PlasmaComponents.ItemDelegate {
     required property int comments
     required property bool isNew
     required property string key
+    required property bool indented
+    required property bool showRepo
+    required property string repoLabel
 
     signal opened(string key)
     signal copyRequested(string text)
@@ -32,6 +35,9 @@ PlasmaComponents.ItemDelegate {
     readonly property var labelList: JSON.parse(labelsJson)
 
     width: ListView.view ? ListView.view.width : implicitWidth
+    // Recuo sob o cabecalho do repo (modo agrupado) para a hierarquia ficar legivel;
+    // no modo plano nao ha cabecalho, entao o padding e o normal
+    leftPadding: indented ? Kirigami.Units.gridUnit * 1.5 : Kirigami.Units.largeSpacing
     // Abrir conta como ver: limpa o destaque dessa issue
     function open() {
         Qt.openUrlExternally(url);
@@ -116,11 +122,20 @@ PlasmaComponents.ItemDelegate {
             }
         }
 
-        // Labels so aparecem se existirem, para nao reservar altura a toa
+        // Repo (so no modo sem agrupamento, onde nao ha cabecalho) e labels. Some por
+        // inteiro quando nao ha nenhum dos dois, para nao reservar altura a toa
         Flow {
             Layout.fillWidth: true
-            visible: delegate.labelList.length > 0
+            visible: delegate.showRepo || delegate.labelList.length > 0
             spacing: Kirigami.Units.smallSpacing
+
+            PlasmaComponents.Label {
+                visible: delegate.showRepo
+                text: delegate.repoLabel
+                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                font.bold: true
+                opacity: 0.7
+            }
 
             Repeater {
                 model: delegate.labelList
