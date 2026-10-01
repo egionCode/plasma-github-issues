@@ -7,7 +7,8 @@ agrupadas por repo, direto no desktop ou no painel do Plasma.
 
 - Filtros: todas, atribuídas a mim, criadas por mim, mencionadas, nos meus repos
 - Busca local por título, repo, label, autor ou número (vários termos = todos precisam casar)
-- Repos ordenados pela atividade mais recente; cabeçalho recolhível com contagem
+- Repos ordenados pela atividade mais recente; cabeçalho recolhível com contagem e issues recuadas sob ele
+- Modo "lista única" (sem agrupar): ordena tudo por atividade e mostra o repo em cada linha. Alterna pelo botão na barra do widget ou em Configurar
 - Destaque de issues novas ou atualizadas desde a última vez que você viu
 - Notificação quando chega issue nova entre duas atualizações
 - Clique abre no navegador; clique direito: abrir, copiar link, marcar como vista
