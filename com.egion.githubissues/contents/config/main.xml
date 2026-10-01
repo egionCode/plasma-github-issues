@@ -15,6 +15,11 @@
     <entry name="includePRs" type="Bool">
       <default>false</default>
     </entry>
+    <!-- Agrupar a lista por repositorio (cabecalhos recolhiveis). Desligado = lista unica
+         ordenada por atividade, com o repo mostrado em cada linha. -->
+    <entry name="groupByRepo" type="Bool">
+      <default>true</default>
+    </entry>
     <!-- Avisar (notificacao do Plasma) quando chegar issue nova entre duas atualizacoes -->
     <entry name="notify" type="Bool">
       <default>true</default>

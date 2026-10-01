@@ -12,6 +12,7 @@ KCM.SimpleKCM {
     property alias cfg_refreshMinutes: refreshSpin.value
     property alias cfg_includePRs: prCheck.checked
     property alias cfg_notify: notifyCheck.checked
+    property alias cfg_groupByRepo: groupCheck.checked
 
     Kirigami.FormLayout {
         QQC2.SpinBox {
@@ -19,6 +20,11 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("Atualizar a cada (min):")
             from: 1
             to: 120
+        }
+        QQC2.CheckBox {
+            id: groupCheck
+            Kirigami.FormData.label: i18n("Lista:")
+            text: i18n("Agrupar por repositório")
         }
         QQC2.CheckBox {
             id: prCheck
