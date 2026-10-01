@@ -23,11 +23,13 @@ ColumnLayout {
     property int visibleCount: 0
     property int newCount: 0
     property bool showOwner: false
+    property bool grouped: true
     property string query: ""
     property var lastUpdate: null
     signal refreshRequested()
     signal searchChanged(string text)
     signal repoToggled(string repo)
+    signal groupingToggled()
     signal issueOpened(string key)
     signal markAllSeenRequested()
 
@@ -76,6 +78,16 @@ ColumnLayout {
             placeholderText: i18n("Buscar...")
             text: full.query
             onTextChanged: full.searchChanged(text)
+        }
+
+        // Alterna entre lista agrupada por repo e lista unica
+        PlasmaComponents.ToolButton {
+            icon.name: full.grouped ? "view-list-tree" : "view-list-details"
+            onClicked: full.groupingToggled()
+            PlasmaComponents.ToolTip {
+                text: full.grouped ? i18n("Agrupado por repositório (clique para lista única)")
+                                   : i18n("Lista única (clique para agrupar por repositório)")
+            }
         }
 
         // Spinner no lugar do botao enquanto carrega: feedback sem mudar o layout
