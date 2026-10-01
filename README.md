@@ -87,28 +87,6 @@ com.egion.githubissues/
 tests/                      # Node tests plus a smoke test in the real QML engine (qml6)
 ```
 
-### Design notes
-
-- The code never uses `async/await`. The QML JavaScript engine can't parse it, and one
-  `async` keyword is enough to make the whole module fail to load. Promises are chained
-  instead. Node accepts the syntax without complaint, so `tests/qml-smoke.test.mjs` loads
-  the modules in `qml6` to catch it. `Object.fromEntries` is missing from that engine too.
-- Notifications never go through a shell. Issue titles can come from strangers (anyone can
-  open an issue on a public repo), so the widget uses `org.kde.notification` and never
-  builds a command out of them.
-- The default filter is "All". "Assigned" shows almost nothing if you mostly work alone.
-- The "new" highlight and the notification use different baselines. The highlight compares
-  with what you have already seen, stored in the widget config. The notification compares
-  with the previous refresh, kept in memory, so an issue alerts you at most once.
-
-## Known limitations
-
-- It uses `GET /issues`, so it only sees repos the token can access.
-- Each refresh reads up to 5 pages of 100 issues.
-- With organizations, the "All" filter includes subscribed items and can get noisy.
-- The widget interface is currently in Portuguese (pt-BR). Strings go through KDE's
-  `i18n()`, so translations are possible.
-
 ## License
 
 [MIT](LICENSE)
