@@ -24,12 +24,14 @@ ColumnLayout {
     property int newCount: 0
     property bool showOwner: false
     property bool grouped: true
+    property bool sortDesc: true
     property string query: ""
     property var lastUpdate: null
     signal refreshRequested()
     signal searchChanged(string text)
     signal repoToggled(string repo)
     signal groupingToggled()
+    signal sortDirectionToggled()
     signal issueOpened(string key)
     signal markAllSeenRequested()
 
@@ -87,6 +89,16 @@ ColumnLayout {
             PlasmaComponents.ToolTip {
                 text: full.grouped ? i18n("Agrupado por repositório (clique para lista única)")
                                    : i18n("Lista única (clique para agrupar por repositório)")
+            }
+        }
+
+        // Alterna a direcao da ordenacao (criterio escolhido nas configuracoes)
+        PlasmaComponents.ToolButton {
+            icon.name: full.sortDesc ? "view-sort-descending" : "view-sort-ascending"
+            onClicked: full.sortDirectionToggled()
+            PlasmaComponents.ToolTip {
+                text: full.sortDesc ? i18n("Ordem decrescente (clique para crescente)")
+                                    : i18n("Ordem crescente (clique para decrescente)")
             }
         }
 

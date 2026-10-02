@@ -34,6 +34,7 @@ PlasmoidItem {
     property var lastUpdate: null
     readonly property string filterType: Plasmoid.configuration.filterType
     readonly property bool grouped: Plasmoid.configuration.groupByRepo
+    readonly property bool sortDesc: Plasmoid.configuration.sortDesc
 
     // Busca local: allIssues guarda a ultima resposta e o modelo e reconstruido a cada
     // mudanca de query/recolhimento, sem nova requisicao
@@ -78,11 +79,13 @@ PlasmoidItem {
         newCount: root.newCount
         showOwner: root.showOwner
         grouped: root.grouped
+        sortDesc: root.sortDesc
         query: root.query
         lastUpdate: root.lastUpdate
         onRefreshRequested: root.refresh()
         onSearchChanged: text => root.query = text
         onRepoToggled: repo => root.toggleRepo(repo)
+        onSortDirectionToggled: Plasmoid.configuration.sortDesc = !Plasmoid.configuration.sortDesc
         onGroupingToggled: Plasmoid.configuration.groupByRepo = !Plasmoid.configuration.groupByRepo
         onIssueOpened: key => root.markSeen(key)
         onMarkAllSeenRequested: root.markAllSeen()
@@ -193,14 +196,14 @@ PlasmoidItem {
         showOwner = new Set(allIssues.map(i => i.repo.split("/")[0])).size > 1;
         issuesModel.clear();
         if (grouped) {
-            for (const group of GH.groupByRepo(shown)) {
+            for (const group of GH.groupByRepo(shown, Plasmoid.configuration.sortBy, Plasmoid.configuration.sortDesc)) {
                 const isCollapsed = query === "" && collapsed.indexOf(group.repo) >= 0;
                 issuesModel.append(row("header", group.repo, group.issues.length, isCollapsed, null));
                 if (isCollapsed) continue;
                 for (const i of group.issues) issuesModel.append(row("issue", group.repo, 0, false, i));
             }
         } else {
-            for (const i of GH.sortByUpdated(shown)) issuesModel.append(row("issue", i.repo, 0, false, i));
+            for (const i of GH.sortIssues(shown, Plasmoid.configuration.sortBy, Plasmoid.configuration.sortDesc)) issuesModel.append(row("issue", i.repo, 0, false, i));
         }
         visibleCount = shown.length;
     }
@@ -266,6 +269,8 @@ PlasmoidItem {
         function onIncludePRsChanged() { root.refresh(); }
         function onCollapsedReposChanged() { root.rebuildModel(); }
         function onGroupByRepoChanged() { root.rebuildModel(); }
+        function onSortByChanged() { root.rebuildModel(); }
+        function onSortDescChanged() { root.rebuildModel(); }
     }
 
     Component.onCompleted: refresh()

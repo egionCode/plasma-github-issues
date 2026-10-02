@@ -13,6 +13,9 @@ KCM.SimpleKCM {
     property alias cfg_includePRs: prCheck.checked
     property alias cfg_notify: notifyCheck.checked
     property alias cfg_groupByRepo: groupCheck.checked
+    // Valores gravados na config, na mesma ordem das opcoes do combo
+    readonly property var sortKeys: ["updated", "created", "comments", "title", "number"]
+    property string cfg_sortBy: "updated"
 
     Kirigami.FormLayout {
         QQC2.SpinBox {
@@ -25,6 +28,14 @@ KCM.SimpleKCM {
             id: groupCheck
             Kirigami.FormData.label: i18n("Lista:")
             text: i18n("Agrupar por repositório")
+        }
+        QQC2.ComboBox {
+            id: sortCombo
+            Kirigami.FormData.label: i18n("Ordenar por:")
+            model: [i18n("Última atualização"), i18n("Data de criação"),
+                    i18n("Mais comentadas"), i18n("Título"), i18n("Número")]
+            currentIndex: Math.max(0, sortKeys.indexOf(cfg_sortBy))
+            onActivated: cfg_sortBy = sortKeys[currentIndex]
         }
         QQC2.CheckBox {
             id: prCheck
