@@ -363,3 +363,50 @@ test('sortByUpdated: nao muta a entrada', () => {
     gh.sortByUpdated(list);
     assert.deepEqual(list.map(i => i.number), [1, 2]);
 });
+
+const sortSample = () => [
+    { repo: 'a/x', number: 1, title: 'beta', comments: 5, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-03-01T00:00:00Z' },
+    { repo: 'a/x', number: 2, title: 'Alpha', comments: 9, createdAt: '2026-02-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+    { repo: 'b/y', number: 3, title: 'gamma', comments: 0, createdAt: '2026-03-01T00:00:00Z', updatedAt: '2026-02-01T00:00:00Z' },
+];
+
+test('sortIssues: cada criterio', () => {
+    const n = k => gh.sortIssues(sortSample(), k).map(i => i.number);
+    assert.deepEqual(n('updated'), [1, 3, 2]);
+    assert.deepEqual(n('created'), [3, 2, 1]);
+    assert.deepEqual(n('comments'), [2, 1, 3]);
+    assert.deepEqual(n('title'), [3, 1, 2]);
+    assert.deepEqual(n('number'), [3, 2, 1]);
+});
+
+test('sortIssues: criterio desconhecido cai em updated e nao muta', () => {
+    const list = sortSample();
+    assert.deepEqual(gh.sortIssues(list, 'xyz').map(i => i.number), [1, 3, 2]);
+    assert.deepEqual(list.map(i => i.number), [1, 2, 3]);
+});
+
+test('groupByRepo: sortBy ordena dentro do repo, repos seguem a atividade', () => {
+    const g = gh.groupByRepo(sortSample(), 'comments');
+    assert.deepEqual(g.map(x => x.repo), ['a/x', 'b/y']);
+    assert.deepEqual(g[0].issues.map(i => i.number), [2, 1]);
+});
+
+test('sortIssues: desc=false inverte o criterio principal', () => {
+    const n = k => gh.sortIssues(sortSample(), k, false).map(i => i.number);
+    assert.deepEqual(n('updated'), [2, 3, 1]);
+    assert.deepEqual(n('title'), [2, 1, 3]);
+    assert.deepEqual(n('number'), [1, 2, 3]);
+});
+
+test('sortIssues: desempate nao inverte com a direcao', () => {
+    const t = '2026-01-01T00:00:00Z';
+    const list = [{ repo: 'b/y', number: 1, updatedAt: t }, { repo: 'a/x', number: 2, updatedAt: t }];
+    const ids = d => gh.sortIssues(list, 'updated', d).map(i => i.repo);
+    assert.deepEqual(ids(true), ids(false));
+});
+
+test('groupByRepo: desc=false inverte so dentro do repo', () => {
+    const g = gh.groupByRepo(sortSample(), 'comments', false);
+    assert.deepEqual(g.map(x => x.repo), ['a/x', 'b/y']);
+    assert.deepEqual(g[0].issues.map(i => i.number), [1, 2]);
+});

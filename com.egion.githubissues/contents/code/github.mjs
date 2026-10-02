@@ -58,9 +58,9 @@ export function normalizeIssues(list, { includePRs = false } = {}) {
 
 // Agrupa por repo para a UI renderizar secoes. Retorna array (nao objeto) porque
 // a ordem precisa ser estavel. Repos: o de atividade mais recente primeiro (no uso
-// diario importa ver onde houve movimento), empate em ordem alfabetica.
-// Issues dentro do repo: da mais recente atualizada para a mais antiga.
-export function groupByRepo(issues) {
+// diario importa ver onde houve movimento), empate em ordem alfabetica. A ordem dos
+// repos NAO segue sortBy: so as issues dentro de cada repo seguem o criterio e a direcao escolhidos.
+export function groupByRepo(issues, sortBy = 'updated', desc = true) {
     const map = new Map();
     for (const issue of issues) {
         if (!map.has(issue.repo)) map.set(issue.repo, []);
@@ -70,10 +70,11 @@ export function groupByRepo(issues) {
         .map(([repo, items]) => ({
             repo,
             // ISO 8601 em UTC ordena corretamente como string
-            issues: items.sort((x, y) => y.updatedAt.localeCompare(x.updatedAt)),
+            latest: items.reduce((m, i) => (i.updatedAt > m ? i.updatedAt : m), ''),
+            issues: sortIssues(items, sortBy, desc),
         }))
-        .sort((a, b) =>
-            b.issues[0].updatedAt.localeCompare(a.issues[0].updatedAt) || a.repo.localeCompare(b.repo));
+        .sort((a, b) => b.latest.localeCompare(a.latest) || a.repo.localeCompare(b.repo))
+        .map(({ repo, issues }) => ({ repo, issues }));
 }
 
 // Idade relativa curta para caber na linha da lista ("5min", "3h", "2d").
@@ -232,4 +233,28 @@ export function sortByUpdated(issues) {
         b.updatedAt.localeCompare(a.updatedAt)
         || a.repo.localeCompare(b.repo)
         || a.number - b.number);
+}
+
+// Criterios aceitos pela opcao "sortBy". Cada um e um comparador em ordem CRESCENTE
+// (menor primeiro); a direcao e aplicada em sortIssues. O desempate comum (repo,
+// numero) tambem fica la para toda ordem ser deterministica.
+export const SORT_KEYS = ['updated', 'created', 'comments', 'title', 'number'];
+
+const SORT_COMPARATORS = {
+    updated: (a, b) => a.updatedAt.localeCompare(b.updatedAt),
+    created: (a, b) => a.createdAt.localeCompare(b.createdAt),
+    comments: (a, b) => a.comments - b.comments,
+    title: (a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }),
+    number: (a, b) => a.number - b.number,
+};
+
+// Ordena por criterio e direcao. desc = true (padrao): maior/mais recente primeiro
+// (titulo: Z-A); false: o inverso. So o criterio principal inverte: o desempate fica
+// fixo para a lista nao reembaralhar ao trocar a direcao. Criterio desconhecido
+// (config editada a mao) cai em "updated" em vez de quebrar. Nao muta a entrada.
+export function sortIssues(issues, sortBy = 'updated', desc = true) {
+    const cmp = SORT_COMPARATORS[sortBy] || SORT_COMPARATORS.updated;
+    const dir = desc ? -1 : 1;
+    return [...issues].sort((a, b) =>
+        dir * cmp(a, b) || a.repo.localeCompare(b.repo) || a.number - b.number);
 }
