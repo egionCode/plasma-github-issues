@@ -20,6 +20,15 @@
     <entry name="groupByRepo" type="Bool">
       <default>true</default>
     </entry>
+    <!-- Criterio de ordenacao das issues: updated, created, comments, title, number.
+         Vale na lista unica e dentro de cada repo quando agrupado. -->
+    <entry name="sortBy" type="String">
+      <default>updated</default>
+    </entry>
+    <!-- Direcao da ordenacao: true = decrescente (mais recente/maior primeiro) -->
+    <entry name="sortDesc" type="Bool">
+      <default>true</default>
+    </entry>
     <!-- Avisar (notificacao do Plasma) quando chegar issue nova entre duas atualizacoes -->
     <entry name="notify" type="Bool">
       <default>true</default>
